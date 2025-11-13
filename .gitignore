@@ -1,0 +1,34 @@
+# Binaries
+test-coverage-agent
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+
+# Coverage files
+*.out
+coverage.out
+coverage.json
+coverage/
+.coverage
+
+# State files
+.coverage-agent-state.json
+coverage-agent.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
