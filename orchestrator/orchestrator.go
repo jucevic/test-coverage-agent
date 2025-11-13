@@ -98,13 +98,12 @@ func (o *Orchestrator) Run(ctx context.Context) error {
 
 		// Check if test generation is needed
 		if !o.state.NeedsTestGeneration() {
-			fmt.Printf("\n✅ Coverage is within acceptable range (< 1%% below target)\n")
+			fmt.Printf("\n✅ Coverage already meets target!\n")
 			fmt.Printf("No test generation needed at this time.\n")
-			fmt.Printf("\n💡 Test generation triggers when coverage drops below %.2f%%\n",
-				o.config.TargetCoverage-1.0)
 			return o.SaveState()
 		}
-		fmt.Printf("\n🔧 Test generation needed (coverage below threshold)\n")
+		fmt.Printf("\n🔧 Test generation needed (coverage below %.2f%% threshold)\n",
+			o.config.TargetCoverage)
 	} else {
 		fmt.Printf("\n🎉 Target coverage already achieved!\n")
 		fmt.Printf("Current coverage (%.2f%%) meets or exceeds target (%.2f%%)\n",

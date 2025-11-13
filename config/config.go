@@ -175,8 +175,7 @@ func (s *State) GetProgress() string {
 }
 
 // NeedsTestGeneration checks if test generation is needed based on coverage threshold
-// Returns true if coverage is below target - 1% (e.g., < 39% when target is 40%)
+// Returns true if coverage is below target (e.g., < 40% when target is 40%)
 func (s *State) NeedsTestGeneration() bool {
-	const threshold = 1.0 // Generate tests when coverage drops > 1% below target
-	return s.CurrentCoverage < (s.TargetCoverage - threshold)
+	return s.CurrentCoverage < s.TargetCoverage
 }
