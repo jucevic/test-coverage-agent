@@ -367,8 +367,7 @@ test-coverage-agent -project /var/repos/service -target 60
 The tool includes smart threshold checking:
 
 - **Coverage ≥ 40%**: Skips test generation (no API calls)
-- **39% ≤ Coverage < 40%**: Skips (within 1% of target)
-- **Coverage < 39%**: Automatically generates tests
+- **Coverage < 40%**: Automatically generates tests
 
 This means you can safely run it in CI on every commit - it only acts when needed!
 
@@ -376,12 +375,12 @@ This means you can safely run it in CI on every commit - it only acts when neede
 # Safe to run repeatedly - only generates when coverage drops
 test-coverage-agent -project . -target 40
 
-# Output when coverage is 39.5%:
-# ✅ Coverage is within acceptable range
+# Output when coverage is 40%+:
+# ✅ Coverage already meets target!
 # No test generation needed at this time.
 
 # Output when coverage is 35%:
-# 🔧 Test generation needed (coverage below threshold)
+# 🔧 Test generation needed (coverage below 40.00% threshold)
 ```
 
 ## Contributing
