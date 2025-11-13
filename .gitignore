@@ -12,7 +12,6 @@ test-coverage-agent
 *.out
 coverage.out
 coverage.json
-coverage/
 .coverage
 
 # State files
