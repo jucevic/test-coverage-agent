@@ -269,6 +269,121 @@ test-coverage-agent/
     └── orchestrator.go     # Workflow coordination
 ```
 
+## Using in CI/CD (Any Project)
+
+The test-coverage-agent works seamlessly in CI pipelines for **any Go project**, regardless of directory structure or location.
+
+### GitHub Actions Setup
+
+1. **Add the secret** (one-time per repository):
+```bash
+gh secret set ANTHROPIC_API_KEY
+```
+
+2. **Add workflow file** to `.github/workflows/test.yml`:
+
+```yaml
+name: Tests with Auto-Coverage
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Run tests
+        run: |
+          go test ./... -coverprofile=coverage.out -covermode=atomic
+          go tool cover -func=coverage.out
+
+      - name: Check coverage
+        id: coverage
+        run: |
+          COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+          echo "coverage=${COVERAGE}" >> $GITHUB_OUTPUT
+          if (( $(echo "$COVERAGE < 40" | bc -l) )); then
+            echo "needs_gen=true" >> $GITHUB_OUTPUT
+          else
+            echo "needs_gen=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Auto-generate tests
+        if: steps.coverage.outputs.needs_gen == 'true'
+        run: |
+          # Install tool
+          git clone https://github.com/jucevic/test-coverage-agent.git /tmp/tca
+          cd /tmp/tca && go build -o test-coverage-agent
+          sudo mv test-coverage-agent /usr/local/bin/
+
+          # Generate tests
+          cd $GITHUB_WORKSPACE
+          test-coverage-agent -project . -target 40 -max-iterations 5 \
+            -api-key "${{ secrets.ANTHROPIC_API_KEY }}"
+
+          # Commit if tests generated
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add .
+            git commit -m "chore: auto-generate tests for coverage"
+            git push
+          fi
+```
+
+### Works With Any Project Structure
+
+The tool automatically detects and works with any Go project:
+
+```bash
+# Monorepo with multiple services
+/project-root
+  ├── services/
+  │   ├── api/          # test-coverage-agent -project ./services/api
+  │   ├── worker/       # test-coverage-agent -project ./services/worker
+  │   └── admin/        # test-coverage-agent -project ./services/admin
+  ├── libs/
+  │   └── common/       # test-coverage-agent -project ./libs/common
+  └── tools/
+
+# Nested projects
+/workspace
+  ├── backend/          # test-coverage-agent -project ./backend
+  ├── cli/              # test-coverage-agent -project ./cli
+  └── sdk/              # test-coverage-agent -project ./sdk
+
+# Any location on your system
+test-coverage-agent -project ~/projects/my-app -target 50
+test-coverage-agent -project /var/repos/service -target 60
+```
+
+### Automatic Threshold Feature
+
+The tool includes smart threshold checking:
+
+- **Coverage ≥ 40%**: Skips test generation (no API calls)
+- **39% ≤ Coverage < 40%**: Skips (within 1% of target)
+- **Coverage < 39%**: Automatically generates tests
+
+This means you can safely run it in CI on every commit - it only acts when needed!
+
+```bash
+# Safe to run repeatedly - only generates when coverage drops
+test-coverage-agent -project . -target 40
+
+# Output when coverage is 39.5%:
+# ✅ Coverage is within acceptable range
+# No test generation needed at this time.
+
+# Output when coverage is 35%:
+# 🔧 Test generation needed (coverage below threshold)
+```
+
 ## Contributing
 
 Contributions are welcome! Areas for improvement:
@@ -277,7 +392,7 @@ Contributions are welcome! Areas for improvement:
 - Better test quality validation
 - Improved error recovery
 - UI/dashboard for progress monitoring
-- Integration with CI/CD pipelines
+- More CI/CD platform examples (GitLab, CircleCI, etc.)
 
 ## License
 
